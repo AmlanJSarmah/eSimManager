@@ -1,9 +1,12 @@
-from core.checker import detect_os
+from core.checker import detect_os, check_installed
 from sys import exit
 
 APPLICATION = {
-    "app" : "eSim",
-    "dependenciesUbuntu" :  ["ngspice", "kicad", "python3"]
+    "app" : "esim",
+    # More dependencies can be configured here
+    "dependenciesUbuntu" :  ["ngspice", "kicad", "python3"],
+    "dependenciesLinux" :  ["ngspice", "kicad", "python3"],
+    "dependenciesWindows" :  ["ngspice", "kicad", "python"]
 }
 
 CONSTANTS = {
@@ -18,5 +21,7 @@ if __name__ == "__main__":
         print("Error: Cannot detect OS")
         exit()
 
+    # Check if app and dependencies are installed
+    install_status = check_installed(APPLICATION, CONSTANTS["os"])
 
-    print(CONSTANTS["os"])
+    print(install_status)
