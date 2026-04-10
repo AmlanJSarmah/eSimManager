@@ -3,7 +3,7 @@ from sys import exit
 
 APPLICATION = {
     "app" : "eSim",
-    "dependenciesLinux" :  ["ngspice", "kicad", "python3"]
+    "dependenciesUbuntu" :  ["ngspice", "kicad", "python3"]
 }
 
 CONSTANTS = {
