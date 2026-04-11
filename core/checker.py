@@ -73,6 +73,56 @@ def _pip_installed(package):
             return True
     return False
 
+
+def _windows_app_installed(name):
+    if os.name != "nt":
+        return False
+
+    try:
+        import winreg
+    except ImportError:
+        return False
+
+    needle = name.lower()
+    uninstall_paths = [
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    ]
+
+    for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+        for base in uninstall_paths:
+            try:
+                key = winreg.OpenKey(root, base)
+            except FileNotFoundError:
+                continue
+
+            try:
+                index = 0
+                while True:
+                    subkey_name = winreg.EnumKey(key, index)
+                    index += 1
+                    try:
+                        subkey = winreg.OpenKey(key, subkey_name)
+                    except FileNotFoundError:
+                        continue
+
+                    try:
+                        display_name, _ = winreg.QueryValueEx(subkey, "DisplayName")
+                    except FileNotFoundError:
+                        display_name = ""
+                    finally:
+                        winreg.CloseKey(subkey)
+
+                    if display_name and needle in display_name.lower():
+                        winreg.CloseKey(key)
+                        return True
+            except OSError:
+                pass
+            finally:
+                winreg.CloseKey(key)
+
+    return False
+
 # TODO: Currently we only check applications installed natively. We can add support for flatpaks and snaps
 def check_installed(application, os_name):
     dependencies_key = None
@@ -95,7 +145,10 @@ def check_installed(application, os_name):
     for program in programs:
         if program in results:
             continue
-        results[program] = shutil.which(program) is not None
+        installed = shutil.which(program) is not None
+        if not installed and os_name == "window":
+            installed = _windows_app_installed(program)
+        results[program] = installed
 
     for package in pip_dependencies:
         if package in results:
