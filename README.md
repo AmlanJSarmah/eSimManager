@@ -46,3 +46,15 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
+
+## Working  
+### Installing eSim from scratch  
+
+<img width="808" height="626" alt="1 ESim Installation" src="https://github.com/user-attachments/assets/50066e34-7980-4156-820d-23a1d8a364fe" />
+<img width="1920" height="1080" alt="2 Running install script" src="https://github.com/user-attachments/assets/9f99c106-efa3-43e0-864e-f697f3c7ac28" />
+
+### Installing Missing dependencies  
+
+<img width="1876" height="1048" alt="4 Removing Dependency" src="https://github.com/user-attachments/assets/475cb9a0-c04f-48d0-88ac-b0e67db241d8" />
+<img width="808" height="626" alt="5 Installing missing dependency" src="https://github.com/user-attachments/assets/7a09127d-1321-4396-88bf-f45e392ace66" />
+<img width="1920" height="1080" alt="6 After installing dependency" src="https://github.com/user-attachments/assets/b21e1124-8dd2-454d-a936-2742620499a5" />
