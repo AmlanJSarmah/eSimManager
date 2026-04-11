@@ -39,4 +39,4 @@ if __name__ == "__main__":
     # esim_dir = None
     # if CONSTANTS["os"] == "ubuntu":
     #    esim_dir = os.path.join(os.path.dirname(__file__), "eSim-2.5")
-    # print(install_esim(CONSTANTS["os"], esim_dir=esim_dir))
+    print(install_esim(CONSTANTS["os"]))

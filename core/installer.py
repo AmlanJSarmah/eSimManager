@@ -4,21 +4,31 @@ import subprocess
 import tempfile
 import urllib.request
 
+WINDOWS_INSTALLER_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5_installer.exe"
+UBUNTU_SOURCE_ZIP_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5.zip"
 
-def _run_command(command, cwd=None):
-    result = subprocess.run(
-        command,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        check=False,
-    )
+
+def _run_command(command, cwd=None, stream_output=False):
+    if stream_output:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            check=False,
+        )
+    else:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
     return {
         "command": command,
         "returncode": result.returncode,
-        "stdout": result.stdout,
-        "stderr": result.stderr,
+        "stdout": result.stdout or "",
+        "stderr": result.stderr or "",
     }
 
 
@@ -29,20 +39,66 @@ def _download_file(url):
     target_path = os.path.join(tempfile.gettempdir(), file_name)
 
     try:
+        print(f"Downloading {url}")
+        print(f"Saving to {target_path}")
         with urllib.request.urlopen(url) as response, open(target_path, "wb") as output:
-            shutil.copyfileobj(response, output)
+            content_length = response.getheader("Content-Length")
+            total_bytes = None
+            if content_length and content_length.isdigit():
+                total_bytes = int(content_length)
+            downloaded = 0
+            last_percent = -1
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                output.write(chunk)
+                downloaded += len(chunk)
+                if total_bytes:
+                    percent = int(downloaded * 100 / total_bytes)
+                    if percent >= last_percent + 5 or percent == 100:
+                        print(f"Download progress: {percent}%")
+                        last_percent = percent
+            if total_bytes:
+                print("Download complete")
+            else:
+                print(f"Download complete: {downloaded} bytes")
     except Exception as exc:
+        print(f"Download error: {exc}")
         return {
             "success": False,
             "path": None,
             "error": str(exc),
         }
 
+    print("Download finished successfully")
     return {
         "success": True,
         "path": target_path,
         "error": None,
     }
+
+
+def _extract_zip(zip_path, target_dir):
+    print(f"Extracting {zip_path}")
+    result = _run_command(["unzip", zip_path, "-d", target_dir])
+    if result["returncode"] != 0:
+        print(f"Extraction error: {result['stderr'].strip() or 'unzip failed'}")
+        raise RuntimeError(result["stderr"].strip() or "unzip failed")
+    print("Extraction complete")
+
+
+def _detect_single_root_dir(target_dir):
+    entries = [
+        name
+        for name in os.listdir(target_dir)
+        if not name.startswith(".")
+    ]
+    if len(entries) == 1:
+        candidate = os.path.join(target_dir, entries[0])
+        if os.path.isdir(candidate):
+            return candidate
+    return target_dir
 
 
 def _start_installer(installer_path):
@@ -70,12 +126,34 @@ def install_esim(
     esim_dir=None,
     install_kicad=False,
     build_from_source=False,
-    windows_installer_url=None,
+    windows_installer_url=WINDOWS_INSTALLER_URL,
+    ubuntu_source_url=UBUNTU_SOURCE_ZIP_URL,
 ):
     results = []
 
     if os_name == "ubuntu":
-        base_dir = esim_dir or os.getcwd()
+        if esim_dir:
+            base_dir = esim_dir
+        else:
+            download = _download_file(ubuntu_source_url)
+            if not download["success"]:
+                return {
+                    "success": False,
+                    "error": download["error"],
+                    "results": results,
+                }
+            extract_dir = tempfile.mkdtemp(prefix="esim-src-")
+            try:
+                _extract_zip(download["path"], extract_dir)
+            except Exception as exc:
+                print(f"Extraction failed: {exc}")
+                return {
+                    "success": False,
+                    "error": str(exc),
+                    "results": results,
+                }
+            base_dir = _detect_single_root_dir(extract_dir)
+
         script_path = os.path.join(base_dir, "install-eSim.sh")
         if not os.path.isfile(script_path):
             return {
@@ -85,7 +163,8 @@ def install_esim(
             }
 
         results.append(_run_command(["chmod", "+x", script_path]))
-        results.append(_run_command([script_path, "--install"], cwd=base_dir))
+        print("Starting eSim install script")
+        results.append(_run_command([script_path, "--install"], cwd=base_dir, stream_output=True))
         success = all(step["returncode"] == 0 for step in results)
         return {"success": success, "error": None if success else "Install failed", "results": results}
 
@@ -97,6 +176,7 @@ def install_esim(
                 "results": results,
             }
 
+        print("Configuring flathub remote")
         results.append(
             _run_command(
                 [
@@ -116,6 +196,7 @@ def install_esim(
                     "error": "esim_dir is required to build from source",
                     "results": results,
                 }
+            print("Building eSim from source with flatpak-builder")
             results.append(
                 _run_command(
                     [
@@ -129,9 +210,11 @@ def install_esim(
                 )
             )
         else:
+            print("Installing eSim from flathub")
             results.append(_run_command(["flatpak", "install", "-y", "flathub", "org.fossee.eSim"]))
 
         if install_kicad:
+            print("Installing KiCad from flathub")
             results.append(_run_command(["flatpak", "install", "-y", "flathub", "org.kicad.KiCad"]))
 
         success = all(step["returncode"] == 0 for step in results)
@@ -161,6 +244,7 @@ def install_esim(
                 "stderr": "",
             }
         )
+        print("Starting Windows installer")
         results.append(_start_installer(download["path"]))
 
         success = all(step.get("returncode", 1) == 0 for step in results)
