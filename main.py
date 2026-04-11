@@ -1,5 +1,7 @@
+import os
 from core.checker import detect_os, check_installed
 from core.dependency import install_dependency
+from core.installer import install_esim
 from sys import exit
 
 APPLICATION = {
@@ -32,3 +34,9 @@ if __name__ == "__main__":
     # Install missing dependency
     # is_install = install_dependency("kicad", CONSTANTS["os"], "system")
     # print(is_install)
+
+    # Install esim if not installed
+    # esim_dir = None
+    # if CONSTANTS["os"] == "ubuntu":
+    #    esim_dir = os.path.join(os.path.dirname(__file__), "eSim-2.5")
+    # print(install_esim(CONSTANTS["os"], esim_dir=esim_dir))
