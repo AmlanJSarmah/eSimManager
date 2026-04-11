@@ -5,8 +5,11 @@ import tempfile
 import urllib.request
 import ctypes
 
-WINDOWS_INSTALLER_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5_installer.exe"
-UBUNTU_SOURCE_ZIP_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5.zip"
+# TODO: We can request to an endpoint to get the latest version and handle upgrades
+VERSION = 2.5
+
+WINDOWS_INSTALLER_URL = f"https://static.fossee.in/esim/installation-files/eSim-{VERSION}_installer.exe"
+UBUNTU_SOURCE_ZIP_URL = f"https://static.fossee.in/esim/installation-files/eSim-{VERSION}.zip"
 
 
 def _run_command(command, cwd=None, stream_output=False):
