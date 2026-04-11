@@ -8,6 +8,9 @@ from core.checker import check_installed, detect_os
 from core.dependency import install_dependency
 from core.installer import install_esim
 
+# Provides the user interface to deal with the core library
+# It uses custom tikinter for cross platform UI compatibility
+
 
 APPLICATION = {
     "app": "esim",

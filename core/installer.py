@@ -5,6 +5,11 @@ import tempfile
 import urllib.request
 import ctypes
 
+# Functions to install esim
+# For ubuntu we download a .zip file, extract and run a install script
+# For other linux distros example Fedora we use flatpaks
+# For windows we use the windows installer.
+
 # TODO: We can request to an endpoint to get the latest version and handle upgrades
 VERSION = 2.5
 
@@ -13,6 +18,9 @@ UBUNTU_SOURCE_ZIP_URL = f"https://static.fossee.in/esim/installation-files/eSim-
 
 
 def _run_command(command, cwd=None, stream_output=False):
+    """
+    Template to run a command used while running chmod, install script for ubuntu and flatpak install for non ubuntu linux distos
+    """
     if stream_output:
         result = subprocess.run(
             command,
@@ -37,6 +45,9 @@ def _run_command(command, cwd=None, stream_output=False):
 
 
 def _download_file(url):
+    """
+    Function to download the .zip for ubuntu and .exe for windows
+    """
     file_name = os.path.basename(urllib.request.urlparse(url).path)
     if not file_name:
         file_name = "esim-installer.exe"
@@ -93,6 +104,11 @@ def _extract_zip(zip_path, target_dir):
 
 
 def _detect_single_root_dir(target_dir):
+    """
+    It checks the extracted zip directory: if it contains exactly one non-hidden entry and that entry is a directory, it returns that directory; 
+    otherwise it returns the original extraction path. 
+    This lets the installer handle zips that wrap everything in a single top-level folder.
+    """
     entries = [
         name
         for name in os.listdir(target_dir)
@@ -106,6 +122,9 @@ def _detect_single_root_dir(target_dir):
 
 
 def _start_installer(installer_path):
+    """
+    Starts the windows installer as a Shell so that we can avoid WinError 740 i.e. requested operation requires elevation error
+    """
     if os.name == "nt":
         try:
             result = ctypes.windll.shell32.ShellExecuteW(None, "runas", installer_path, None, None, 1)
@@ -160,6 +179,12 @@ def install_esim(
     windows_installer_url=WINDOWS_INSTALLER_URL,
     ubuntu_source_url=UBUNTU_SOURCE_ZIP_URL,
 ):
+    """
+    Function to install esim.
+    Uses install scripts for ubuntu
+    Downloads .exe for windows
+    Uses flatpak for non ubuntu linux distors
+    """
     results = []
 
     if os_name == "ubuntu":

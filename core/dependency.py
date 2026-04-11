@@ -4,6 +4,13 @@ import shutil
 import subprocess
 import sys
 
+# Functions to install missing dependencies
+# It uses pip for some gloabal dependencies
+# It uses apt for some ubuntu dependencies
+# It uses flatpak for some dependencies not avaible in standard repos or for some other linux varients like Arch and Fedora
+# It uses winget to download dependencies in windows.
+
+
 
 def _run_command(command, use_sudo=False):
     if use_sudo and os.name != "nt" and shutil.which("sudo"):
@@ -66,6 +73,9 @@ def _pick_system_python():
 
 
 def _install_pip(package):
+    """
+    Utlize the pip package manger installed in users system to download dependencies like Matplotlib, PyQt5 etc
+    """
     interpreter = _pick_system_python()
     if not interpreter:
         return {
@@ -83,11 +93,17 @@ def _install_pip(package):
 
 
 def _pip_to_ubuntu_package(package):
+    """
+    In ubuntu some pip packages like matplot lib are installed as `sudo apt install python3-matplotlib`
+    """
     normalized = package.strip().lower().replace("_", "-")
     return f"python3-{normalized}"
 
 
 def _install_apt(package):
+    """
+    Uses ubuntu's apt package manager to install packages like kicad.
+    """
     if not shutil.which("apt-get"):
         return {
             "name": package,
@@ -112,6 +128,9 @@ def _install_apt(package):
 
 
 def _install_flatpak(app_id):
+    """"
+    For non ubuntu os distros we utlize flatpack to install dependencies
+    """
     if not shutil.which("flatpak"):
         return {
             "name": app_id,
@@ -152,6 +171,9 @@ def _resolve_winget_id(name):
 
 
 def _install_winget(name):
+    """
+    We utlize winget to install dependencies in windows
+    """
     if not shutil.which("winget"):
         return {
             "name": name,
@@ -173,6 +195,9 @@ def _install_winget(name):
 
 
 def install_dependency(name, os_name, dep_type):
+    """
+    Utlize pip to installed python based dependency and native package managers for other dependencies.
+    """
     if dep_type == "pip":
         if os_name == "ubuntu":
             return _install_apt(_pip_to_ubuntu_package(name))

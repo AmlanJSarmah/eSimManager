@@ -5,8 +5,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Functions to detect os version and check if esim and various dependencies are installed.
+# detect_os() detects the current os and check_installed() determine if esim and dependencies are installed for ubuntu, other linux distros and windows.
+# The private methods preceeded by _ i.e _is_ubuntu(), _pip_installed(package) etc are utility methods used by detect_os() and check_installed()
+
 
 def _is_ubuntu():
+    """
+    We check if detects linux os is ubuntu
+    If yes we use ubuntu native solutions to install esim and dependency management. i.e. we use install script to install esim and apt-get for dependency management
+    """
     os_release = Path("/etc/os-release")
     if not os_release.is_file():
         return False
@@ -28,6 +36,9 @@ def detect_os():
 
 
 def _pip_installed(package):
+    """
+    We utilize pip that is installed in the user's system to check for pip dependencies like matplotlib, PyQt5 etc
+    """
     base_prefix = getattr(sys, "base_prefix", sys.prefix)
     candidates = []
     if os.name == "nt":
@@ -75,6 +86,9 @@ def _pip_installed(package):
 
 
 def _windows_app_installed(name):
+    """
+    We use winreg to check dependencies in Windows
+    """
     if os.name != "nt":
         return False
 
@@ -125,6 +139,9 @@ def _windows_app_installed(name):
 
 # TODO: Currently we only check applications installed natively. We can add support for flatpaks and snaps
 def check_installed(application, os_name):
+    """
+    Checks if dependencies are installed for ubuntu; other linux distros like Arch, Fedora etc; and Windows
+    """
     dependencies_key = None
     if os_name == "ubuntu":
         dependencies_key = "dependenciesUbuntu"
