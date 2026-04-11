@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import tempfile
 import urllib.request
+import ctypes
 
 WINDOWS_INSTALLER_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5_installer.exe"
 UBUNTU_SOURCE_ZIP_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5.zip"
@@ -102,6 +103,33 @@ def _detect_single_root_dir(target_dir):
 
 
 def _start_installer(installer_path):
+    if os.name == "nt":
+        try:
+            result = ctypes.windll.shell32.ShellExecuteW(None, "runas", installer_path, None, None, 1)
+        except Exception as exc:
+            return {
+                "returncode": 1,
+                "stdout": "",
+                "stderr": str(exc),
+                "started": False,
+            }
+
+        if result <= 32:
+            return {
+                "returncode": 1,
+                "stdout": "",
+                "stderr": f"ShellExecute failed with code {result}",
+                "started": False,
+            }
+
+        return {
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "started": True,
+            "pid": None,
+        }
+
     try:
         process = subprocess.Popen([installer_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception as exc:

@@ -118,6 +118,10 @@ class InstallerApp(ctk.CTk):
     def _log(self, message):
         self.after(0, self._append_log, message)
 
+    def _log_progress(self, message):
+        print(message, flush=True)
+        self._log(message)
+
     def _set_busy(self, busy):
         self._busy = busy
         state = "disabled" if busy else "normal"
@@ -289,27 +293,46 @@ class InstallerApp(ctk.CTk):
         self._run_task(task)
 
     def _on_install_dependencies(self):
+        missing_system, missing_pip = self._missing_dependencies()
+        total = len(missing_system) + len(missing_pip)
+        if total:
+            self._show_terminal_prompt_modal(
+                "Dependency Installer",
+                "Dependency installation may prompt in the terminal (sudo/password)."
+                " Please switch to the terminal to respond.",
+            )
+
         def task():
             missing_system, missing_pip = self._missing_dependencies()
+            total_local = len(missing_system) + len(missing_pip)
+            completed = 0
             if not missing_system and not missing_pip:
                 self._log("No missing dependencies detected.")
                 return
 
+            self._log_progress("Dependency install progress: 0%")
+
             for name in missing_system:
+                completed += 1
+                percent = int(completed * 100 / total_local) if total_local else 100
                 self._log(f"Installing system dependency: {name}")
                 result = install_dependency(name, self.os_name, "system")
                 if result.get("installed"):
                     self._log(f"Installed: {name}")
                 else:
                     self._log(f"Failed: {name} ({result.get('error', 'unknown error')})")
+                self._log_progress(f"Dependency install progress: {percent}%")
 
             for name in missing_pip:
+                completed += 1
+                percent = int(completed * 100 / total_local) if total_local else 100
                 self._log(f"Installing Python dependency: {name}")
                 result = install_dependency(name, self.os_name, "pip")
                 if result.get("installed"):
                     self._log(f"Installed: {name}")
                 else:
                     self._log(f"Failed: {name} ({result.get('error', 'unknown error')})")
+                self._log_progress(f"Dependency install progress: {percent}%")
 
         self._run_task(task)
 
