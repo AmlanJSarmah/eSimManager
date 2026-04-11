@@ -1,6 +1,10 @@
 # eSimInstaller
 An application to install and configure eSim and it's various dependencies.   
 
+## Links
+Design Document https://docs.google.com/document/d/1sywkwsLLzTECfUI_Wz8j8ZHUOvW-Gcm70VznmayUhtM/edit?usp=sharing  
+Walkthrough https://youtu.be/SZHgf7i0jHA
+
 ## Dependencies
 Esim works on both windows and linux but it has not been extensively tested for other linux distros except Ubuntu.  
 Other than that **python3** and **pip** are the only major dependencies.  
