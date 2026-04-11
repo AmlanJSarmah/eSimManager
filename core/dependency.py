@@ -82,6 +82,11 @@ def _install_pip(package):
     }
 
 
+def _pip_to_ubuntu_package(package):
+    normalized = package.strip().lower().replace("_", "-")
+    return f"python3-{normalized}"
+
+
 def _install_apt(package):
     if not shutil.which("apt-get"):
         return {
@@ -169,6 +174,8 @@ def _install_winget(name):
 
 def install_dependency(name, os_name, dep_type):
     if dep_type == "pip":
+        if os_name == "ubuntu":
+            return _install_apt(_pip_to_ubuntu_package(name))
         return _install_pip(name)
 
     if dep_type != "system":
