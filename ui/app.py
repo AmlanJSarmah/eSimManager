@@ -1,4 +1,6 @@
+import os
 import threading
+import tkinter as tk
 
 import customtkinter as ctk
 
@@ -22,6 +24,7 @@ class InstallerApp(ctk.CTk):
         self.title("eSim Installer")
         self.geometry("780x560")
         self.minsize(640, 480)
+        self._set_app_icon()
 
         self.os_name = detect_os()
         self._busy = False
@@ -32,6 +35,19 @@ class InstallerApp(ctk.CTk):
 
         self._build_ui()
         self.refresh_status()
+
+    def _set_app_icon(self):
+        logo_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "assets", "esim_logo.png")
+        )
+        if not os.path.isfile(logo_path):
+            return
+        try:
+            icon = tk.PhotoImage(file=logo_path)
+        except tk.TclError:
+            return
+        self.iconphoto(False, icon)
+        self._icon_ref = icon
 
     def _build_ui(self):
         header = ctk.CTkLabel(self, text="eSim Installer", font=ctk.CTkFont(size=22, weight="bold"))
@@ -125,6 +141,29 @@ class InstallerApp(ctk.CTk):
         thread = threading.Thread(target=wrapper, daemon=True)
         thread.start()
 
+    def _show_terminal_prompt_modal(self, title, message):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(title)
+        dialog.geometry("420x180")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.update_idletasks()
+        dialog.deiconify()
+        dialog.wait_visibility()
+        dialog.grab_set()
+
+        frame = ctk.CTkFrame(dialog)
+        frame.pack(fill="both", expand=True, padx=16, pady=16)
+
+        label = ctk.CTkLabel(frame, text=message, wraplength=360, justify="left")
+        label.pack(pady=(10, 20), anchor="w")
+
+        button = ctk.CTkButton(frame, text="OK", command=dialog.destroy)
+        button.pack(anchor="e")
+
+        dialog.wait_window()
+
+
     def _get_os_dependencies(self):
         if self.os_name == "ubuntu":
             return APPLICATION.get("dependenciesUbuntu", [])
@@ -207,6 +246,31 @@ class InstallerApp(ctk.CTk):
         self._update_actions()
 
     def _on_download_esim(self):
+        if self.os_name != "ubuntu":
+            def task():
+                self._log("Starting eSim installation...")
+                result = install_esim(self.os_name)
+                if result.get("success"):
+                    self._log("eSim installation completed.")
+                else:
+                    self._log(f"eSim installation failed: {result.get('error', 'unknown error')}")
+
+                for step in result.get("results", []):
+                    returncode = step.get("returncode")
+                    if returncode not in (0, None):
+                        stderr = (step.get("stderr") or "").strip()
+                        if stderr:
+                            self._log(f"Error: {stderr}")
+
+            self._run_task(task)
+            return
+
+        self._show_terminal_prompt_modal(
+            "Ubuntu Installer",
+            "The installer will prompt in the terminal for inputs (y/n, proxy, sudo)."
+            " Please switch to the terminal to respond.",
+        )
+
         def task():
             self._log("Starting eSim installation...")
             result = install_esim(self.os_name)
