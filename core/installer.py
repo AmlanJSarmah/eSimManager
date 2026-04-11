@@ -17,7 +17,7 @@ UBUNTU_SOURCE_ZIP_URL = "https://static.fossee.in/esim/installation-files/eSim-2
 
 def _run_command(command, cwd=None, stream_output=False):
     """
-    Template to run a command used while running chmod, install script for ubuntu and flatpak install for non ubuntu linux distos
+    Template to run a command. It is used while running chmod, install script for ubuntu and flatpak install for non ubuntu linux distos
     """
     if stream_output:
         result = subprocess.run(
