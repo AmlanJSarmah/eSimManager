@@ -4,9 +4,11 @@ from sys import exit
 APPLICATION = {
     "app" : "esim",
     # More dependencies can be configured here
-    "dependenciesUbuntu" :  ["ngspice", "kicad", "python3"],
-    "dependenciesLinux" :  ["ngspice", "kicad", "python3"],
-    "dependenciesWindows" :  ["ngspice", "kicad", "python"]
+    "dependenciesUbuntu" :  ["ngspice", "kicad"],
+    "dependenciesLinux" :  ["ngspice", "kicad"],
+    "dependenciesWindows" :  ["ngspice", "kicad"],
+    # Pip packages needed independednt of OS
+    "dependenciesPip" : ["matplotlib", "PyQt5"]
 }
 
 CONSTANTS = {
