@@ -11,10 +11,8 @@ import ctypes
 # For windows we use the windows installer.
 
 # TODO: We can request to an endpoint to get the latest version and handle upgrades
-VERSION = 2.5
-
-WINDOWS_INSTALLER_URL = f"https://static.fossee.in/esim/installation-files/eSim-{VERSION}_installer.exe"
-UBUNTU_SOURCE_ZIP_URL = f"https://static.fossee.in/esim/installation-files/eSim-{VERSION}.zip"
+WINDOWS_INSTALLER_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5_installer.exe"
+UBUNTU_SOURCE_ZIP_URL = "https://static.fossee.in/esim/installation-files/eSim-2.5.zip"
 
 
 def _run_command(command, cwd=None, stream_output=False):
