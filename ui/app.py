@@ -10,6 +10,12 @@ from core.installer import install_esim
 
 # Provides the user interface to deal with the core library
 # It uses custom tikinter for cross platform UI compatibility
+#
+# Flow overview:
+# - Initialize the app, detect OS, build the UI, and load install status.
+# - Status refresh queries core.checker and updates the status box + actions.
+# - Action buttons run installers in background threads and stream logs.
+# - UI state is toggled during tasks to prevent concurrent operations.
 
 
 APPLICATION = {
@@ -23,6 +29,7 @@ APPLICATION = {
 
 class InstallerApp(ctk.CTk):
     def __init__(self):
+        """Initialize the main window, state, and UI."""
         super().__init__()
         self.title("eSim Installer")
         self.geometry("780x560")
@@ -40,6 +47,7 @@ class InstallerApp(ctk.CTk):
         self.refresh_status()
 
     def _set_app_icon(self):
+        """Load and set the window icon if the asset exists."""
         logo_path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "assets", "esim_logo.png")
         )
@@ -53,6 +61,7 @@ class InstallerApp(ctk.CTk):
         self._icon_ref = icon
 
     def _build_ui(self):
+        """Create and lay out the UI widgets."""
         header = ctk.CTkLabel(self, text="eSim Installer", font=ctk.CTkFont(size=22, weight="bold"))
         header.pack(padx=20, pady=(20, 10), anchor="w")
 
@@ -107,25 +116,30 @@ class InstallerApp(ctk.CTk):
         self.log_box.configure(state="disabled")
 
     def _set_status_text(self, text):
+        """Replace the status textbox contents."""
         self.status_box.configure(state="normal")
         self.status_box.delete("1.0", "end")
         self.status_box.insert("end", text)
         self.status_box.configure(state="disabled")
 
     def _append_log(self, message):
+        """Append a line to the activity log."""
         self.log_box.configure(state="normal")
         self.log_box.insert("end", f"{message}\n")
         self.log_box.see("end")
         self.log_box.configure(state="disabled")
 
     def _log(self, message):
+        """Schedule a log append on the UI thread."""
         self.after(0, self._append_log, message)
 
     def _log_progress(self, message):
+        """Log a message and emit it to stdout."""
         print(message, flush=True)
         self._log(message)
 
     def _set_busy(self, busy):
+        """Toggle UI controls during long-running operations."""
         self._busy = busy
         state = "disabled" if busy else "normal"
         self.download_button.configure(state=state)
@@ -133,6 +147,7 @@ class InstallerApp(ctk.CTk):
         self.refresh_button.configure(state=state)
 
     def _run_task(self, target):
+        """Run a target function in a background thread."""
         if self._busy:
             return
 
@@ -149,6 +164,7 @@ class InstallerApp(ctk.CTk):
         thread.start()
 
     def _show_terminal_prompt_modal(self, title, message):
+        """Show a modal reminder to check the terminal."""
         dialog = ctk.CTkToplevel(self)
         dialog.title(title)
         dialog.geometry("420x180")
@@ -172,6 +188,7 @@ class InstallerApp(ctk.CTk):
 
 
     def _get_os_dependencies(self):
+        """Return OS-specific dependencies from APPLICATION."""
         if self.os_name == "ubuntu":
             return APPLICATION.get("dependenciesUbuntu", [])
         if self.os_name == "linux":
@@ -181,6 +198,7 @@ class InstallerApp(ctk.CTk):
         return []
 
     def _missing_dependencies(self):
+        """Compute missing system and pip dependencies."""
         system_deps = self._get_os_dependencies()
         pip_deps = APPLICATION.get("dependenciesPip", [])
         missing_system = [name for name in system_deps if not self._status.get(name, False)]
@@ -188,6 +206,7 @@ class InstallerApp(ctk.CTk):
         return missing_system, missing_pip
 
     def _format_status_lines(self):
+        """Build status text lines for the status panel."""
         lines = []
         os_label = self.os_name or "unknown"
         lines.append(f"OS: {os_label}")
@@ -220,6 +239,7 @@ class InstallerApp(ctk.CTk):
         return lines
 
     def _update_actions(self):
+        """Show or hide action buttons based on install state."""
         if not self.os_name:
             self.download_button.grid_remove()
             self.install_deps_button.grid_remove()
@@ -242,6 +262,7 @@ class InstallerApp(ctk.CTk):
             self.install_deps_button.grid_remove()
 
     def refresh_status(self):
+        """Refresh installation status and update the UI."""
         if not self.os_name:
             self._status = {}
             self._set_status_text("\n".join(self._format_status_lines()))
@@ -253,6 +274,7 @@ class InstallerApp(ctk.CTk):
         self._update_actions()
 
     def _on_download_esim(self):
+        """Handle the Download eSim button action."""
         if self.os_name != "ubuntu":
             def task():
                 self._log("Starting eSim installation...")
@@ -296,6 +318,7 @@ class InstallerApp(ctk.CTk):
         self._run_task(task)
 
     def _on_install_dependencies(self):
+        """Handle the Install Missing Dependencies button action."""
         missing_system, missing_pip = self._missing_dependencies()
         total = len(missing_system) + len(missing_pip)
         if total:
@@ -341,6 +364,7 @@ class InstallerApp(ctk.CTk):
 
 
 def run():
+    """Launch the installer UI."""
     app = InstallerApp()
     app.mainloop()
 
