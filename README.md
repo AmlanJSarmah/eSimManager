@@ -1,8 +1,7 @@
-# eSimInstaller
+# eSimManager
 An application to install and configure eSim and it's various dependencies.   
 
 ## Links
-Design Document https://docs.google.com/document/d/1sywkwsLLzTECfUI_Wz8j8ZHUOvW-Gcm70VznmayUhtM/edit?usp=sharing  
 Walkthrough https://youtu.be/SZHgf7i0jHA
 
 ## Dependencies
